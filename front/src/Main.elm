@@ -12,20 +12,23 @@ type alias Model =
   , action : Action
   }
 
-type Action = ViewingTournaments | CreatingTournament TournamentCreationForm
+type Action
+  = ViewingTournaments
+  | CreatingTournament TournamentCreationForm
+  | ViewingTournament String ThrowerCreationForm
 
 type alias Tournament = 
   { name : String
   , throwers : List String
-  , status : TournamentStatus
   }
-
-type TournamentStatus = Created | Published
 
 type alias TournamentCreationForm =
   { tournamentName : String
   }
 
+type alias ThrowerCreationForm =
+  { name : String
+  }
 
 ------- Init
 initialModel =
@@ -41,9 +44,11 @@ type Msg
   = NewTournament
   | BackToTournaments
   | TournamentCreated TournamentCreationForm
+  | TournamentSelected String 
   | Typing Field String
+  | ThrowerAdded
 
-type Field = TournamentName
+type Field = TournamentName | ThrowerName
 
 update : Msg -> Model -> (Model, Cmd msg)
 update msg model = case msg of
@@ -59,10 +64,14 @@ update msg model = case msg of
     ( { model | action = ViewingTournaments
               , tournaments =
                   { name = data.tournamentName
-                  , status = Created
                   , throwers = []
                   } :: model.tournaments
       }
+    , Cmd.none
+    )
+  TournamentSelected tournamentName ->
+    ( { model | action = ViewingTournament tournamentName { name="" } }
+
     , Cmd.none
     )
   Typing _ data -> case model.action of
@@ -72,6 +81,8 @@ update msg model = case msg of
       )
     _ -> 
       (model, Cmd.none)
+  ThrowerAdded -> (model, Cmd.none)
+
 
 -------- View
 
@@ -82,6 +93,8 @@ view model = case model.action of
     , tournamentList model
     ]
   CreatingTournament form -> creationTournamentCreationForm model form
+  ViewingTournament name form ->
+    showTournamentDetails model name form
 
 creationTournamentCreationForm model form = 
     div []
@@ -99,9 +112,17 @@ tournamentList model =
   List.map showTournament model.tournaments
   |> div []
 
-showTournament tournament = text tournament.name
+showTournament : Tournament -> Html Msg
+showTournament tournament =
+  div [onClick (TournamentSelected tournament.name)] [text tournament.name]
 
-
+showTournamentDetails : Model -> String -> ThrowerCreationForm -> Html Msg
+showTournamentDetails model tname form =
+  div []
+    ([text tname] ++
+    [ input [onInput (\name -> Typing TournamentName name)] []
+    , button [onClick ThrowerAdded] [text "add thrower"]
+    ])
 
 ---------- Program
 main : Program () Model Msg
