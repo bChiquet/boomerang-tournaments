@@ -3,6 +3,7 @@ module Main exposing (..)
 import Browser
 import Html exposing (Html, div, text, button, input)
 import Html.Events exposing (onClick, onInput)
+import Html.Attributes exposing (style, value, placeholder)
 import Debug exposing (log)
 
 
@@ -19,8 +20,10 @@ type Action
 
 type alias Tournament = 
   { name : String
-  , throwers : List String
+  , throwers : List Thrower
   }
+
+type alias Thrower = String
 
 type alias TournamentCreationForm =
   { tournamentName : String
@@ -46,7 +49,7 @@ type Msg
   | TournamentCreated TournamentCreationForm
   | TournamentSelected String 
   | Typing Field String
-  | ThrowerAdded
+  | ThrowerAdded String ThrowerCreationForm
 
 type Field = TournamentName | ThrowerName
 
@@ -79,10 +82,21 @@ update msg model = case msg of
       ({ model | action = CreatingTournament { tournamentName = data }}
       , Cmd.none
       )
+    (ViewingTournament t form) ->
+      ({ model | action = ViewingTournament t { name = data }}
+      , Cmd.none)
     _ -> 
       (model, Cmd.none)
-  ThrowerAdded -> (model, Cmd.none)
+  ThrowerAdded tname form ->
+    ({ model | action = ViewingTournament tname { name = ""}
+             , tournaments = List.map (theFunction tname form.name) model.tournaments }
+    , Cmd.none)
 
+
+theFunction tournamentname thrower tournament =
+  if tournament.name == tournamentname
+  then { tournament | throwers = thrower :: tournament.throwers}
+  else tournament
 
 -------- View
 
@@ -98,19 +112,22 @@ view model = case model.action of
 
 creationTournamentCreationForm model form = 
     div []
-      [ input [onInput (\name -> Typing TournamentName name)] []
-      , button [onClick BackToTournaments] [text "cancel"]
+      [ homeButton 
+      , input [onInput (\name -> Typing TournamentName name)] []
       , button
           [onClick (TournamentCreated form)]
           [text "create"]
       ]
     
 
+homeButton = button [onClick BackToTournaments] [text "Back to home"]
 newTournamentButton = button [onClick NewTournament] [text "New Tournament"]
 
 tournamentList model =
   List.map showTournament model.tournaments
-  |> div []
+  |> div [ style "display" "flex"
+         , style "flex-direction" "column"
+         ]
 
 showTournament : Tournament -> Html Msg
 showTournament tournament =
@@ -120,9 +137,25 @@ showTournamentDetails : Model -> String -> ThrowerCreationForm -> Html Msg
 showTournamentDetails model tname form =
   div []
     ([text tname] ++
-    [ input [onInput (\name -> Typing TournamentName name)] []
-    , button [onClick ThrowerAdded] [text "add thrower"]
+    [ homeButton
+    , div [] <| List.map showThrower (thatOtherFunction tname model)
+    , input [ onInput (\name -> Typing TournamentName name)
+            , placeholder "Add a thrower..."
+            , value form.name]
+            []
+    , button [onClick (ThrowerAdded tname form)] [text "add thrower"]
     ])
+
+showThrower = text
+
+thatOtherFunction tournamentName model =
+  model.tournaments
+    |> List.filter (\t -> t.name == tournamentName)
+    |> List.head
+    |> Maybe.map .throwers
+    |> Maybe.withDefault []
+
+
 
 ---------- Program
 main : Program () Model Msg

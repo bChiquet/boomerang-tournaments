@@ -27,3 +27,14 @@ Boomerang Tournaments
 
 ![ruleset](./boomerang_score.png)
 
+##### Third session goals
+- use proper view layout
+  https://css-tricks.com/snippets/css/a-guide-to-flexbox/
+- add throwers
+- add a thrower object.
+
+##### Fourth session goal
+- use proper view layout
+- Refactor!
+- add thrower object
+- learn tests
