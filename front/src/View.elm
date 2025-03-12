@@ -45,14 +45,16 @@ tournamentList model =
 
 showTournament : Tournament -> Html MainLogic.Msg
 showTournament tournament =
-  div [onClick (TournamentSelected tournament.name)] [text tournament.name]
+  div [style "color" "blue"
+    , style "height"  ""
+    , onClick (TournamentSelected tournament.name)] [text tournament.name]
 
 showTournamentDetails : Model -> String -> ThrowerCreationForm -> Html MainLogic.Msg
 showTournamentDetails model tname form =
   div []
     [ text tname 
     , homeButton
-    , div [] <| List.map showThrower (throwersInTournament tname model)
+    , showThrowersTable tname model
     , input [ onInput (\name -> Typing TournamentName name)
             , placeholder "Add a thrower..."
             , value form.name]
@@ -60,8 +62,15 @@ showTournamentDetails model tname form =
     , button [onClick (ThrowerAdded tname form)] [text "add thrower"]
     ]
 
-showThrower : String -> Html msg
-showThrower = text
+showThrowersTable : TournamentName -> Model -> Html msg
+showThrowersTable tname model =
+  div [ style "display" "flex"
+         , style "flex-direction" "column"
+         ] <| List.map showThrower (throwersInTournament tname model)
+
+showThrower : Thrower -> Html msg
+showThrower thrower = 
+  div [] [text thrower]
 
 throwersInTournament : TournamentName -> Model -> List Thrower
 throwersInTournament tournamentName model =
